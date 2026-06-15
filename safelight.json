@@ -1,0 +1,8 @@
+{
+  "id": "exif-plus",
+  "name": "EXIF Plus",
+  "version": "1.0.0",
+  "description": "Extended EXIF metadata panel — camera settings, lens info, file details and shooting statistics.",
+  "author": "OPGERUIMD97",
+  "main": "dist/index.js"
+}
