@@ -1,5 +1,3 @@
-const { useState, useEffect } = React;
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatShutter(val) {
@@ -10,10 +8,7 @@ function formatShutter(val) {
 
 function formatFL(mm, crop) {
   if (!mm) return "—";
-  if (crop !== 1) {
-    const eq = Math.round(mm * crop);
-    return `${mm} mm  (${eq} mm KB)`;
-  }
+  if (crop !== 1) return `${mm} mm  (${Math.round(mm * crop)} mm KB)`;
   return `${mm} mm`;
 }
 
@@ -80,131 +75,129 @@ const S = {
     alignItems: "baseline", padding: "3px 0",
     borderBottom: "1px solid #3C3836"
   },
-  label: { color: "#B1ADA1", fontSize: 11, flexShrink: 0, marginRight: 8 },
-  value: { fontSize: 11, textAlign: "right", fontVariantNumeric: "tabular-nums" }
+  labelStyle: { color: "#B1ADA1", fontSize: 11, flexShrink: 0, marginRight: 8 },
+  valueStyle: { fontSize: 11, textAlign: "right", fontVariantNumeric: "tabular-nums" }
 };
-
-// ── Row component ─────────────────────────────────────────────────────────────
-function Row({ label, value, accent }) {
-  if (!value || value === "—") return null;
-  return React.createElement("div", { style: S.row },
-    React.createElement("span", { style: S.label }, label),
-    React.createElement("span", {
-      style: { ...S.value, color: accent ? "#C15F3C" : "#F4F3EE" }
-    }, value)
-  );
-}
-
-// ── Section component ─────────────────────────────────────────────────────────
-function Section({ title, children }) {
-  const [open, setOpen] = useState(true);
-  return React.createElement("div", { style: { marginBottom: 4 } },
-    React.createElement("div", {
-      style: S.sectionHeader,
-      onClick: () => setOpen(o => !o)
-    },
-      React.createElement("span", { style: { fontSize: 9 } }, open ? "▾" : "▸"),
-      title
-    ),
-    open ? React.createElement("div", null, children) : null
-  );
-}
-
-// ── Hoofd panel ───────────────────────────────────────────────────────────────
-function ExifPlusPanel({ api }) {
-  const [photo, setPhoto] = useState(null);
-
-  useEffect(() => {
-    const store = api.stores.useCatalogStore;
-    const unsub = store.subscribe(state => {
-      const id = state.activePhotoId;
-      if (!id) { setPhoto(null); return; }
-      const p = state.photos.find(ph => ph.id === id);
-      setPhoto(p || null);
-    });
-    const state = store.getState();
-    const id = state.activePhotoId;
-    if (id) setPhoto(state.photos.find(ph => ph.id === id) || null);
-    return unsub;
-  }, []);
-
-  if (!photo) {
-    return React.createElement("div",
-      { style: { ...S.container, ...S.empty } },
-      "Geen foto geselecteerd"
-    );
-  }
-
-  const e = photo.exif || {};
-  const crop     = cropFactor(e.make, e.model);
-  const aperture = e.aperture  ? `f/${e.aperture}` : null;
-  const shutter  = e.shutter   ? formatShutter(e.shutter) : null;
-  const iso      = e.iso       ? `ISO ${e.iso}` : null;
-  const triangle = [aperture, shutter, iso].filter(Boolean).join("  ·  ");
-  const dims     = (photo.width && photo.height)
-    ? `${photo.width.toLocaleString()} × ${photo.height.toLocaleString()} px` : null;
-  const mp       = (photo.width && photo.height)
-    ? `${((photo.width * photo.height) / 1e6).toFixed(1)} MP` : null;
-
-  return React.createElement("div", { style: S.container },
-
-    // Belichtingsdriehoek
-    triangle && React.createElement("div", { style: S.summary }, triangle),
-
-    // Camera
-    React.createElement(Section, { title: "Camera" },
-      React.createElement(Row, { label: "Merk",     value: e.make }),
-      React.createElement(Row, { label: "Model",    value: e.model, accent: true }),
-      React.createElement(Row, { label: "Software", value: e.software })
-    ),
-
-    // Belichting
-    React.createElement(Section, { title: "Belichting" },
-      React.createElement(Row, { label: "Sluitertijd", value: shutter, accent: true }),
-      React.createElement(Row, { label: "Diafragma",   value: aperture, accent: true }),
-      React.createElement(Row, { label: "ISO",         value: iso, accent: true }),
-      React.createElement(Row, { label: "Bel. comp.",  value: e.exposureCompensation != null ? evComp(e.exposureCompensation) : null }),
-      React.createElement(Row, { label: "Meting",      value: e.meteringMode }),
-      React.createElement(Row, { label: "Programma",   value: e.exposureProgram }),
-      React.createElement(Row, { label: "Flits",       value: e.flash })
-    ),
-
-    // Lens
-    React.createElement(Section, { title: "Lens" },
-      React.createElement(Row, { label: "Lens",        value: e.lensModel || e.lens, accent: true }),
-      React.createElement(Row, { label: "Brandpunt",   value: formatFL(e.focalLength, crop) }),
-      crop !== 1 ? React.createElement(Row, { label: "Crop factor", value: `${crop}×` }) : null,
-      React.createElement(Row, { label: "Min. diafr.", value: e.maxApertureValue ? `f/${e.maxApertureValue}` : null })
-    ),
-
-    // Bestand
-    React.createElement(Section, { title: "Bestand" },
-      React.createElement(Row, { label: "Bestandsnaam", value: photo.filename }),
-      React.createElement(Row, { label: "Type",         value: photo.mimeType }),
-      React.createElement(Row, { label: "Grootte",      value: formatSize(photo.fileSize) }),
-      React.createElement(Row, { label: "Afmetingen",   value: dims }),
-      React.createElement(Row, { label: "Megapixels",   value: mp, accent: true }),
-      React.createElement(Row, { label: "Opnamedatum",  value: formatDate(photo.dateCreated) }),
-      React.createElement(Row, { label: "Geïmporteerd", value: formatDate(photo.dateImported) })
-    ),
-
-    // Status
-    React.createElement(Section, { title: "Status" },
-      React.createElement(Row, { label: "Beoordeling", value: photo.rating ? "★".repeat(photo.rating) : null, accent: true }),
-      React.createElement(Row, { label: "Label",       value: photo.colorLabel !== "none" ? photo.colorLabel : null }),
-      React.createElement(Row, { label: "Vlag",        value: photo.flag !== "none" ? photo.flag : null }),
-      React.createElement(Row, { label: "Rotatie",     value: photo.rotation ? `${photo.rotation}°` : null }),
-      React.createElement(Row, { label: "Keywords",    value: photo.keywords?.length ? photo.keywords.join(", ") : null })
-    )
-  );
-}
 
 // ── Activatie ─────────────────────────────────────────────────────────────────
 export function activate(api) {
+  // React komt altijd van de app zelf — nooit zelf bundelen
+  const { react: React } = api;
+  const { useState, useEffect } = React;
+
+  // ── Row ──
+  function Row({ label, value, accent }) {
+    if (!value || value === "—") return null;
+    return React.createElement("div", { style: S.row },
+      React.createElement("span", { style: S.labelStyle }, label),
+      React.createElement("span", {
+        style: { ...S.valueStyle, color: accent ? "#C15F3C" : "#F4F3EE" }
+      }, value)
+    );
+  }
+
+  // ── Section ──
+  function Section({ title, children }) {
+    const [open, setOpen] = useState(true);
+    return React.createElement("div", { style: { marginBottom: 4 } },
+      React.createElement("div", {
+        style: S.sectionHeader,
+        onClick: () => setOpen(o => !o)
+      },
+        React.createElement("span", { style: { fontSize: 9 } }, open ? "▾" : "▸"),
+        title
+      ),
+      open ? React.createElement("div", null, children) : null
+    );
+  }
+
+  // ── Hoofd panel ──
+  function ExifPlusPanel() {
+    const [photo, setPhoto] = useState(null);
+
+    useEffect(() => {
+      const store = api.stores.useCatalogStore;
+      const sync = state => {
+        const id = state.activePhotoId;
+        if (!id) { setPhoto(null); return; }
+        setPhoto(state.photos.find(ph => ph.id === id) || null);
+      };
+      const unsub = store.subscribe(sync);
+      sync(store.getState());
+      return unsub;
+    }, []);
+
+    if (!photo) {
+      return React.createElement("div",
+        { style: { ...S.container, ...S.empty } },
+        "Geen foto geselecteerd"
+      );
+    }
+
+    const e      = photo.exif || {};
+    const crop   = cropFactor(e.make, e.model);
+    const ap     = e.aperture ? `f/${e.aperture}` : null;
+    const sh     = e.shutter  ? formatShutter(e.shutter) : null;
+    const iso    = e.iso      ? `ISO ${e.iso}` : null;
+    const tri    = [ap, sh, iso].filter(Boolean).join("  ·  ");
+    const dims   = (photo.width && photo.height)
+      ? `${photo.width.toLocaleString()} × ${photo.height.toLocaleString()} px` : null;
+    const mp     = (photo.width && photo.height)
+      ? `${((photo.width * photo.height) / 1e6).toFixed(1)} MP` : null;
+
+    const ce = (type, props, ...children) => React.createElement(type, props, ...children);
+
+    return ce("div", { style: S.container },
+
+      tri && ce("div", { style: S.summary }, tri),
+
+      ce(Section, { title: "Camera" },
+        ce(Row, { label: "Merk",     value: e.make }),
+        ce(Row, { label: "Model",    value: e.model, accent: true }),
+        ce(Row, { label: "Software", value: e.software })
+      ),
+
+      ce(Section, { title: "Belichting" },
+        ce(Row, { label: "Sluitertijd", value: sh,  accent: true }),
+        ce(Row, { label: "Diafragma",   value: ap,  accent: true }),
+        ce(Row, { label: "ISO",         value: iso, accent: true }),
+        ce(Row, { label: "Bel. comp.",  value: e.exposureCompensation != null ? evComp(e.exposureCompensation) : null }),
+        ce(Row, { label: "Meting",      value: e.meteringMode }),
+        ce(Row, { label: "Programma",   value: e.exposureProgram }),
+        ce(Row, { label: "Flits",       value: e.flash })
+      ),
+
+      ce(Section, { title: "Lens" },
+        ce(Row, { label: "Lens",        value: e.lensModel || e.lens, accent: true }),
+        ce(Row, { label: "Brandpunt",   value: formatFL(e.focalLength, crop) }),
+        crop !== 1 ? ce(Row, { label: "Crop factor", value: `${crop}×` }) : null,
+        ce(Row, { label: "Min. diafr.", value: e.maxApertureValue ? `f/${e.maxApertureValue}` : null })
+      ),
+
+      ce(Section, { title: "Bestand" },
+        ce(Row, { label: "Bestandsnaam", value: photo.filename }),
+        ce(Row, { label: "Type",         value: photo.mimeType }),
+        ce(Row, { label: "Grootte",      value: formatSize(photo.fileSize) }),
+        ce(Row, { label: "Afmetingen",   value: dims }),
+        ce(Row, { label: "Megapixels",   value: mp, accent: true }),
+        ce(Row, { label: "Opnamedatum",  value: formatDate(photo.dateCreated) }),
+        ce(Row, { label: "Geïmporteerd", value: formatDate(photo.dateImported) })
+      ),
+
+      ce(Section, { title: "Status" },
+        ce(Row, { label: "Beoordeling", value: photo.rating ? "★".repeat(photo.rating) : null, accent: true }),
+        ce(Row, { label: "Label",       value: photo.colorLabel !== "none" ? photo.colorLabel : null }),
+        ce(Row, { label: "Vlag",        value: photo.flag !== "none" ? photo.flag : null }),
+        ce(Row, { label: "Rotatie",     value: photo.rotation ? `${photo.rotation}°` : null }),
+        ce(Row, { label: "Keywords",    value: photo.keywords?.length ? photo.keywords.join(", ") : null })
+      )
+    );
+  }
+
   api.registerPanel({
     id:              "exif-plus.panel",
     title:           "EXIF Plus",
-    component:       (props) => ExifPlusPanel({ api, ...props }),
+    component:       ExifPlusPanel,
     defaultLocation: "right",
   });
 }
