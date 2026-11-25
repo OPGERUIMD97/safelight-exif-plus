@@ -1,5 +1,7 @@
 # EXIF Plus for Safelight
 
+This panel is replaced by [Image Information](https://github.com/OPGERUIMD97/safelight-image-info). Deactivate EXIF Plus and use that panel.
+
 An extended EXIF metadata panel for [Safelight](https://github.com/anthonyreimche/SafeLight), showing far more detail than the built-in INFO panel.
 
 ## What it shows

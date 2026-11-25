@@ -1,8 +1,12 @@
 {
   "id": "exif-plus",
   "name": "EXIF Plus",
-  "version": "1.0.0",
-  "description": "Extended EXIF metadata panel — camera settings, lens info, file details and shooting statistics.",
+  "version": "1.0.1",
+  "description": "Replaced by Image Information (OPGERUIMD97/safelight-image-info).",
+  "deprecated": {
+    "replacedBy": "OPGERUIMD97/safelight-image-info",
+    "message": "Deze informatie staat nu in Image Information."
+  },
   "author": "OPGERUIMD97",
   "main": "dist/index.js"
 }
