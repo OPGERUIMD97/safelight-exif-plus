@@ -5,7 +5,7 @@
   "description": "Replaced by Image Information (OPGERUIMD97/safelight-image-info).",
   "deprecated": {
     "replacedBy": "OPGERUIMD97/safelight-image-info",
-    "message": "Deze informatie staat nu in Image Information."
+    "message": "Image Information now includes this panel."
   },
   "author": "OPGERUIMD97",
   "main": "dist/index.js"
